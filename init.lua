@@ -50,23 +50,22 @@ function RenderPlaneFix:RegisterPatch()
 
     RenderPlaneFix.Log("Creating EntityLifecycleEvent listener")
     self._entityListener = NewProxy({
-        OnEntityReassemble = {
+        OnPlayerReassemble = {
             args = { "handle:EntityLifecycleEvent" },
             callback = function(event)
-                local entity = event:GetEntity()
-                if entity:IsPlayer() then
-                    RenderPlaneFix:RunPatchOnEntity(entity)
-                end
+                local player = event:GetEntity()
+                RenderPlaneFix:RunPatchOnEntity(player)
             end
         }
     })
 
-    RenderPlaneFix.Log("Adding 'Entity/Reassemble' listener")
+    RenderPlaneFix.Log("Adding 'Entity/Reassemble' listener for PlayerPuppet")
     Game.GetCallbackSystem()
         :RegisterCallback(
             "Entity/Reassemble",
             self._entityListener:Target(),
-            self._entityListener:Function("OnEntityReassemble"))
+            self._entityListener:Function("OnPlayerReassemble"))
+        :AddTarget(EntityTarget.Type("PlayerPuppet"))
 
     return true
 end
