@@ -23,6 +23,25 @@ FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
 OTHER DEALINGS IN THE SOFTWARE.
 ]]
 
+-- BetterUI is MIT licensed https://github.com/Marco4413/CP77-BetterSleeves
+
+---@param n number
+---@return number
+---@return number
+local function BetterUI_FitNButtonsInContentRegionAvail(n)
+    local widthAvail, _ = ImGui.GetContentRegionAvail()
+    local lineHeight = ImGui.GetTextLineHeightWithSpacing()
+    local buttonWidth = widthAvail/n - 2.5 * (n-1)
+    return buttonWidth, lineHeight
+end
+
+---@param n number
+---@param label string
+---@return boolean
+local function BetterUI_FitButtonN(n, label)
+    return ImGui.Button(label, BetterUI_FitNButtonsInContentRegionAvail(n))
+end
+
 local RenderPlaneFix = {
     showUI = false,
     -- Anything that does not match "^[hlstg][012]_%d%d%d_"
@@ -145,6 +164,24 @@ local function Event_OnDraw()
                 ImGui.TextWrapped(RenderPlaneFix.patchedComponents[i])
             end
         end
+        ImGui.Separator()
+
+        ImGui.Text("Patch |")
+        ImGui.SameLine()
+
+        if BetterUI_FitButtonN(3, "Register") then RenderPlaneFix:RegisterPatch(); end
+        ImGui.SameLine()
+
+        if BetterUI_FitButtonN(2, "Unregister") then RenderPlaneFix:UnregisterPatch(); end
+        ImGui.SameLine()
+
+        if BetterUI_FitButtonN(1, "Run") then
+            local player = Game.GetPlayer()
+            if player then
+                RenderPlaneFix:RunPatchOnEntity(player)
+            end
+        end
+        ImGui.Separator()
     end
 end
 
