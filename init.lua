@@ -66,6 +66,7 @@ function RenderPlaneFix:RegisterPatch()
             self._entityListener:Target(),
             self._entityListener:Function("OnPlayerReassemble"))
         :AddTarget(EntityTarget.Type("PlayerPuppet"))
+        :SetLifetime(CallbackLifetime.Forever)
 
     return true
 end
