@@ -113,19 +113,24 @@ end
 
 function RenderPlaneFix:RunPatchOnEntity(entity)
     if not self:AreRequirementsMet() then return false; end
+
+    local entSkinnedMeshComponentCName = CName.new("entSkinnedMeshComponent")
     local entGarmentSkinnedMeshComponentCName = CName.new("entGarmentSkinnedMeshComponent")
+
+    local emptyCName = CName.new()
     local renderPlaneCName = CName.new("renderPlane")
 
     self.patchedComponents = { }
     local entityComponents = entity:GetComponents()
-    for _, garmentSkinnedMeshComponent in next, entityComponents do
-        if (garmentSkinnedMeshComponent:GetClassName() == entGarmentSkinnedMeshComponentCName
-            and garmentSkinnedMeshComponent.renderingPlaneAnimationParam ~= renderPlaneCName
+    for _, component in next, entityComponents do
+        local componentClassName = component:GetClassName()
+        if ((componentClassName == entSkinnedMeshComponentCName or componentClassName == entGarmentSkinnedMeshComponentCName)
+            and component.renderingPlaneAnimationParam == emptyCName
             --and garmentSkinnedMeshComponent.name.value:find("^[hlstg][012]_%d%d%d_")
-            and self:ShouldPatchComponentByName(garmentSkinnedMeshComponent.name.value)) then
-            table.insert(self.patchedComponents, garmentSkinnedMeshComponent.name.value)
-            garmentSkinnedMeshComponent.renderingPlaneAnimationParam = renderPlaneCName
-            garmentSkinnedMeshComponent:RefreshAppearance()
+            and self:ShouldPatchComponentByName(component.name.value)) then
+            table.insert(self.patchedComponents, component.name.value)
+            component.renderingPlaneAnimationParam = renderPlaneCName
+            component:RefreshAppearance()
         end
     end
     return true
