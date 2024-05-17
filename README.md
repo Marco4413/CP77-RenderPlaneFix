@@ -50,7 +50,7 @@ RenderPlaneFix:RunPatchOnEntity(entity)
 RenderPlaneFix.componentNamePatternsBlacklist
 
 -- This table contains string to boolean pairs.
--- Each entry of represents the full name
+-- Each entry represents the full name
 --  of a component to not be patched.
 RenderPlaneFix.componentNameBlacklist
 
