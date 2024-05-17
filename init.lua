@@ -47,7 +47,23 @@ local RenderPlaneFix = {
     -- Anything that does not match "^[hlstg][012]_%d%d%d_"
     --  should not be patched. However, most modded items would
     --  not match against that pattern.
-    componentNameBlacklist = { "^hh_", "^Morph", "_shadow$", "_shadowmesh$" },
+    componentNamePatternsBlacklist = {
+        "_shadow$", "_shadowmesh$",
+        "^hh_%d%d%d_p?[wm][abcf]a?__",
+        "^MorphTargetSkinnedMesh",
+        "^[ntw][0x]_000_p?[mw]a_base__",
+        "^[ant][0x]_00[08]_p?[mw]a__?fpp_",
+    },
+    componentNameBlacklist = {
+        ["shoe_lights"] = true,
+        ["shoes"]  = true,
+        ["feet"]   = true,
+        ["calves"] = true,
+        ["legs"]   = true,
+        ["thighs"] = true,
+        ["torso"]  = true,
+        ["body"]   = true,
+    },
     patchedComponents = { }
 }
 
@@ -56,7 +72,8 @@ function RenderPlaneFix.Log(...)
 end
 
 function RenderPlaneFix:ShouldPatchComponentByName(componentName)
-    for _, pattern in next, self.componentNameBlacklist do
+    if self.componentNameBlacklist[componentName] then return false; end
+    for _, pattern in next, self.componentNamePatternsBlacklist do
         if componentName:find(pattern) then
             return false
         end
