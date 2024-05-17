@@ -47,6 +47,11 @@ RenderPlaneFix:RunPatchOnEntity(entity)
 -- Any pattern within this table will be matched against
 --  component names. If the pattern does not match then
 --  the component can be patched.
+RenderPlaneFix.componentNamePatternsBlacklist
+
+-- This table contains string to boolean pairs.
+-- Each entry of represents the full name
+--  of a component to not be patched.
 RenderPlaneFix.componentNameBlacklist
 
 -- Checks if the given component name should be patched.
