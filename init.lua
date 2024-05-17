@@ -57,7 +57,7 @@ end
 
 function RenderPlaneFix:ShouldPatchComponentByName(componentName)
     for _, pattern in next, self.componentNameBlacklist do
-        if component.name.value:find(pattern) then
+        if componentName:find(pattern) then
             return false
         end
     end
