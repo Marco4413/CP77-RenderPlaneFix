@@ -47,7 +47,7 @@ local RenderPlaneFix = {
     -- Anything that does not match "^[hlstg][012]_%d%d%d_"
     --  should not be patched. However, most modded items would
     --  not match against that pattern.
-    componentNameBlacklist = { },
+    componentNameBlacklist = { "^hh_", "^Morph", "_shadow$", "_shadowmesh$" },
     patchedComponents = { }
 }
 
