@@ -60,6 +60,7 @@ local RenderPlaneFix = {
         "_shadow$", "_shadowmesh$",
         "^hh_%d%d%d_p?[wm][abcf]a?__",
         "^MorphTargetSkinnedMesh",
+        "^Morph",
         "^[ntw][0x]_000_p?[mw]a_base__",
         "^[ant][0x]_00[08]_p?[mw]a__?fpp_",
     },
