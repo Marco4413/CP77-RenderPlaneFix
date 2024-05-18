@@ -46,6 +46,12 @@ local RenderPlaneFix = {
     showUI = false,
     -- The whitelist is matched first, so it overrides any blacklist setting
     componentNameWhitelist = {
+        ["t0_000_pma_base__full_seamfix"] = true,
+        ["t0_000_pwa_base__full_seamfix"] = true,
+        ["t0_000_pma_base__full"] = true,
+        ["t0_000_pwa_base__full"] = true,
+        ["t0_000_pma_fpp__torso"] = true,
+        ["t0_000_pwa_fpp__torso"] = true,
     },
     -- Anything that does not match "^[hlstg][012]_%d%d%d_"
     --  should not be patched. However, most modded items would
@@ -138,6 +144,7 @@ function RenderPlaneFix:RunPatchOnEntity(entity)
 
     local entSkinnedMeshComponentCName = CName.new("entSkinnedMeshComponent")
     local entGarmentSkinnedMeshComponentCName = CName.new("entGarmentSkinnedMeshComponent")
+    local entMorphTargetSkinnedMeshComponentCName = CName.new("entMorphTargetSkinnedMeshComponent")
 
     local emptyCName = CName.new()
     local renderPlaneCName = CName.new("renderPlane")
@@ -149,7 +156,8 @@ function RenderPlaneFix:RunPatchOnEntity(entity)
     for _, component in next, entityComponents do
         local componentClassName = component:GetClassName()
         if (componentClassName == entSkinnedMeshComponentCName
-            or componentClassName == entGarmentSkinnedMeshComponentCName) then
+            or componentClassName == entGarmentSkinnedMeshComponentCName
+            or componentClassName == entMorphTargetSkinnedMeshComponentCName) then
             if (component.renderingPlaneAnimationParam == emptyCName
                 --and garmentSkinnedMeshComponent.name.value:find("^[hlstg][012]_%d%d%d_")
                 and self:ShouldPatchComponentByName(component.name.value)) then
