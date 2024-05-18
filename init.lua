@@ -44,6 +44,9 @@ end
 
 local RenderPlaneFix = {
     showUI = false,
+    -- The whitelist is matched first, so it overrides any blacklist setting
+    componentNameWhitelist = {
+    },
     -- Anything that does not match "^[hlstg][012]_%d%d%d_"
     --  should not be patched. However, most modded items would
     --  not match against that pattern.
@@ -72,6 +75,7 @@ function RenderPlaneFix.Log(...)
 end
 
 function RenderPlaneFix:ShouldPatchComponentByName(componentName)
+    if self.componentNameWhitelist[componentName] then return true;  end
     if self.componentNameBlacklist[componentName] then return false; end
     for _, pattern in next, self.componentNamePatternsBlacklist do
         if componentName:find(pattern) then
