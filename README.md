@@ -44,6 +44,12 @@ RenderPlaneFix:AreRequirementsMet()
 
 RenderPlaneFix:RunPatchOnEntity(entity)
 
+-- This table contains string to boolean pairs.
+-- Each entry represents the full name
+--  of a component to be patched.
+-- The whitelist overrides any blacklist setting.
+RenderPlaneFix.componentNameWhitelist
+
 -- Any pattern within this table will be matched against
 --  component names. If the pattern does not match then
 --  the component can be patched.
