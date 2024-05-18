@@ -67,7 +67,8 @@ local RenderPlaneFix = {
         ["torso"]  = true,
         ["body"]   = true,
     },
-    patchedComponents = { }
+    patchedComponents = { },
+    unpatchedComponents = { },
 }
 
 function RenderPlaneFix.Log(...)
@@ -142,16 +143,25 @@ function RenderPlaneFix:RunPatchOnEntity(entity)
     local renderPlaneCName = CName.new("renderPlane")
 
     self.patchedComponents = { }
+    self.unpatchedComponents = { }
+
     local entityComponents = entity:GetComponents()
     for _, component in next, entityComponents do
         local componentClassName = component:GetClassName()
-        if ((componentClassName == entSkinnedMeshComponentCName or componentClassName == entGarmentSkinnedMeshComponentCName)
-            and component.renderingPlaneAnimationParam == emptyCName
-            --and garmentSkinnedMeshComponent.name.value:find("^[hlstg][012]_%d%d%d_")
-            and self:ShouldPatchComponentByName(component.name.value)) then
-            table.insert(self.patchedComponents, component.name.value)
-            component.renderingPlaneAnimationParam = renderPlaneCName
-            component:RefreshAppearance()
+        if (componentClassName == entSkinnedMeshComponentCName
+            or componentClassName == entGarmentSkinnedMeshComponentCName) then
+            if (component.renderingPlaneAnimationParam == emptyCName
+                --and garmentSkinnedMeshComponent.name.value:find("^[hlstg][012]_%d%d%d_")
+                and self:ShouldPatchComponentByName(component.name.value)) then
+                component.renderingPlaneAnimationParam = renderPlaneCName
+                component:RefreshAppearance()
+            end
+
+            if component.renderingPlaneAnimationParam == renderPlaneCName then
+                table.insert(self.patchedComponents, component.name.value)
+            elseif component.renderingPlaneAnimationParam == emptyCName then
+                table.insert(self.unpatchedComponents, component.name.value)
+            end
         end
     end
     return true
@@ -182,12 +192,24 @@ local function Event_OnDraw()
         
         if ImGui.CollapsingHeader("Patched Components") then
             ImGui.TextWrapped(table.concat{
-                "All components that were recently patched are shown here.",
-                " If an item is not in the list, either it was already patched or has no issues."
+                "ALL components that have 'renderPlane' set are shown here.",
+                " Which does not strictly mean that they were patched by this mod."
             })
             for i=1, #RenderPlaneFix.patchedComponents do
                 ImGui.Bullet()
                 ImGui.TextWrapped(RenderPlaneFix.patchedComponents[i])
+            end
+        end
+        ImGui.Separator()
+        
+        if ImGui.CollapsingHeader("Unpatched Components") then
+            ImGui.TextWrapped(table.concat{
+                "All components that can be patched are shown here.",
+                " This section is mainly used to see what components were filtered out."
+            })
+            for i=1, #RenderPlaneFix.unpatchedComponents do
+                ImGui.Bullet()
+                ImGui.TextWrapped(RenderPlaneFix.unpatchedComponents[i])
             end
         end
         ImGui.Separator()
