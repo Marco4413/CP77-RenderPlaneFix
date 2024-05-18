@@ -57,9 +57,8 @@ local RenderPlaneFix = {
     --  should not be patched. However, most modded items would
     --  not match against that pattern.
     componentNamePatternsBlacklist = {
-        "_shadow$", "_shadowmesh$",
-        "^hh_%d%d%d_p?[wm][abcf]a?__",
-        "^MorphTargetSkinnedMesh",
+        "_shadow$", "_shadowmesh$", "^beard_shadow",
+        "^h[ehtx]b?_%d%d%d_p?[wm][abcf]a?__",
         "^Morph",
         "^[ntw][0x]_000_p?[mw]a_base__",
         "^[ant][0x]_00[08]_p?[mw]a__?fpp_",
@@ -69,10 +68,11 @@ local RenderPlaneFix = {
         ["shoes"]  = true,
         ["feet"]   = true,
         ["calves"] = true,
-        ["legs"]   = true,
         ["thighs"] = true,
+        ["legs"]   = true,
         ["torso"]  = true,
         ["body"]   = true,
+        ["beard"]   = true,
     },
     patchedComponents = { },
     unpatchedComponents = { },
