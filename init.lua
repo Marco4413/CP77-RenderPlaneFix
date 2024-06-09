@@ -53,7 +53,7 @@ local RenderPlaneFix = {
         ["legs"]   = true,
         ["torso"]  = true,
         ["body"]   = true,
-        ["beard"]   = true,
+        ["beard"]  = true,
     },
     patchedComponents = { },
     unpatchedComponents = { },
