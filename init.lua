@@ -25,8 +25,14 @@ OTHER DEALINGS IN THE SOFTWARE.
 
 local BetterUI = require "BetterUI"
 
+---@enum CustomPatchType
+local CustomPatchType = { Empty = 0, RenderPlane = 1 }
 local RenderPlaneFix = {
     showUI = false,
+    customPatch = false,
+    ---@type table<string, CustomPatchType>
+    customPatchComponents = { },
+    CustomPatchType = CustomPatchType,
     -- The whitelist is matched first, so it overrides any blacklist setting
     componentNameWhitelist = {
         ["t0_000_pma_base__full_seamfix"] = true,
@@ -121,7 +127,7 @@ function RenderPlaneFix:AreRequirementsMet()
     return Codeware ~= nil
 end
 
-function RenderPlaneFix:RunPatchOnEntity(entity)
+function RenderPlaneFix:RunAutoPatchOnEntity(entity)
     if not self:AreRequirementsMet() then return false; end
 
     local entSkinnedMeshComponentCName = CName.new("entSkinnedMeshComponent")
@@ -162,6 +168,49 @@ local function Event_OnInit()
         RenderPlaneFix:RegisterPatch()
     else
         RenderPlaneFix.Log("Mod Requirements not met, please install Codeware")
+    end
+end
+
+function RenderPlaneFix:RunCustomPatchOnEntity(entity)
+    if not self:AreRequirementsMet() then return false; end
+
+    local entSkinnedMeshComponentCName = CName.new("entSkinnedMeshComponent")
+    local entGarmentSkinnedMeshComponentCName = CName.new("entGarmentSkinnedMeshComponent")
+    local entMorphTargetSkinnedMeshComponentCName = CName.new("entMorphTargetSkinnedMeshComponent")
+
+    local emptyCName = CName.new()
+    local renderPlaneCName = CName.new("renderPlane")
+
+    self.patchedComponents = { }
+    self.unpatchedComponents = { }
+
+    local entityComponents = entity:GetComponents()
+    for _, component in next, entityComponents do
+        local componentClassName = component:GetClassName()
+        if (componentClassName == entSkinnedMeshComponentCName
+            or componentClassName == entGarmentSkinnedMeshComponentCName
+            or componentClassName == entMorphTargetSkinnedMeshComponentCName) then
+            local patch = self.customPatchComponents[component.name.value]
+            if patch then
+                component.renderingPlaneAnimationParam = (patch == CustomPatchType.RenderPlane and renderPlaneCName or emptyCName)
+                component:RefreshAppearance()
+            end
+
+            if component.renderingPlaneAnimationParam == renderPlaneCName then
+                table.insert(self.patchedComponents, component.name.value)
+            elseif component.renderingPlaneAnimationParam == emptyCName then
+                table.insert(self.unpatchedComponents, component.name.value)
+            end
+        end
+    end
+    return true
+end
+
+function RenderPlaneFix:RunPatchOnEntity(entity)
+    if RenderPlaneFix.customPatch then
+        RenderPlaneFix:RunCustomPatchOnEntity(entity)
+    else
+        RenderPlaneFix:RunAutoPatchOnEntity(entity)
     end
 end
 
