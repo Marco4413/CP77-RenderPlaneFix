@@ -245,10 +245,9 @@ end
 
 function RenderPlaneFix:RunPatchOnEntity(entity)
     if RenderPlaneFix.customPatch then
-        RenderPlaneFix:RunCustomPatchOnEntity(entity)
-    else
-        RenderPlaneFix:RunAutoPatchOnEntity(entity)
+        return RenderPlaneFix:RunCustomPatchOnEntity(entity)
     end
+    return RenderPlaneFix:RunAutoPatchOnEntity(entity)
 end
 
 function RenderPlaneFix:GetPatchableComponentsOfEntity(entity)
