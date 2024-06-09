@@ -350,11 +350,11 @@ local function Event_OnDraw()
             })
 
             ImGui.TextWrapped("The Component Selector menu shows all components (equipped by the player) which can be patched.")
-            ImGui.Bullet(); ImGui.SameLine(); ImGui.TextWrapped("Pressing the + or - buttons will add or remove the item from the whitelist.")
+            ImGui.Bullet(); ImGui.SameLine(); ImGui.TextWrapped("Pressing the + or - buttons will add or remove the item from the patch list.")
             ImGui.Bullet(); ImGui.SameLine(); ImGui.TextWrapped(
-                "If the item is on the whitelist, pressing the R or E buttons will set the component to either 'renderPlane' or 'None'.")
+                "If the item is on the patch list, pressing the R or E buttons will set the component to either 'renderPlane' or 'None'.")
             ImGui.Bullet(); ImGui.SameLine(); ImGui.TextWrapped(table.concat{
-                "If the item is on the whitelist, pressing the A button will simulate the patch being applied.",
+                "If the item is on the patch list, pressing the A button will simulate the patch being applied.",
                 " Once pressed, you should swap weapons or aim to see the changes."
             })
 
