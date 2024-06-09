@@ -42,6 +42,11 @@ RenderPlaneFix:IsPatchRegistered()
 
 RenderPlaneFix:AreRequirementsMet()
 
+-- Runs the automatic patch on the entity
+RenderPlaneFix:RunAutoPatchOnEntity(entity)
+-- Runs the user-defined patch on the entity
+RenderPlaneFix:RunCustomPatchOnEntity(entity)
+-- Calls RunAutoPatchOnEntity or RunCustomPatchOnEntity based on user settings
 RenderPlaneFix:RunPatchOnEntity(entity)
 
 -- This table contains string to boolean pairs.
