@@ -331,6 +331,113 @@ local function Event_OnDraw()
         end
         ImGui.Separator()
 
+        RenderPlaneFix.customPatch = ImGui.Checkbox("Use Custom Patch", RenderPlaneFix.customPatch)
+        ImGui.TextWrapped(table.concat{
+            "Press the arrow if the menu does not open.",
+            " Nested sub-menus are a bit broken but I need them here."
+        })
+
+        if ImGui.CollapsingHeader("Custom Patch") then
+            ImGui.TextWrapped(table.concat{
+                "If something does not work try reloading the save file first (some changes are not real-time).",
+                " Especially if you loaded a save with Custom Patch disabled."
+            })
+
+            ImGui.TextWrapped(table.concat{
+                "You can manage and build your custom patch here.",
+                " The automatic patch has some issues which cannot easily be fixed.",
+                " You can try to work around those by manually defining what to patch."
+            })
+
+            ImGui.TextWrapped("The Component Selector menu shows all components (equipped by the player) which can be patched.")
+            ImGui.Bullet(); ImGui.SameLine(); ImGui.TextWrapped("Pressing the + or - buttons will add or remove the item from the whitelist.")
+            ImGui.Bullet(); ImGui.SameLine(); ImGui.TextWrapped(
+                "If the item is on the whitelist, pressing the R or E buttons will set the component to either 'renderPlane' or 'None'.")
+            ImGui.Bullet(); ImGui.SameLine(); ImGui.TextWrapped(table.concat{
+                "If the item is on the whitelist, pressing the A button will simulate the patch being applied.",
+                " Once pressed, you should swap weapons or aim to see the changes."
+            })
+
+            ImGui.TextWrapped("The Patch Manager menu shows all components which will be patched (if found) and allows you to remove them or change their type.")
+
+            ImGui.Separator()
+            if ImGui.CollapsingHeader("Component Selector") then
+                local player = Game.GetPlayer()
+                if not player then
+                    ImGui.TextWrapped("No player found, please load a game.")
+                else
+                    local emptyCName = CName.new()
+                    local renderPlaneCName = CName.new("renderPlane")
+
+                    local patchables = RenderPlaneFix:GetPatchableComponentsOfEntity(player)
+                    ImGui.PushID("custom-components")
+                    for _, component in next, patchables do
+                        ImGui.PushID(component.name.value)
+                        local patch = RenderPlaneFix.customPatchComponents[component.name.value]
+                        if patch then
+                            if BetterUI.ButtonRemove() then
+                                RenderPlaneFix.customPatchComponents[component.name.value] = nil
+                            end
+                            if patch == CustomPatchType.Empty then
+                                ImGui.SameLine()
+                                if BetterUI.SquareButton("R") then
+                                    RenderPlaneFix.customPatchComponents[component.name.value] = CustomPatchType.RenderPlane
+                                end
+                                ImGui.SameLine()
+                                if BetterUI.SquareButton("A") then
+                                    component.renderingPlaneAnimationParam = emptyCName
+                                    component:RefreshAppearance()
+                                end
+                            elseif patch == CustomPatchType.RenderPlane then
+                                ImGui.SameLine()
+                                if BetterUI.SquareButton("E") then
+                                    RenderPlaneFix.customPatchComponents[component.name.value] = CustomPatchType.Empty
+                                end
+                                ImGui.SameLine()
+                                if BetterUI.SquareButton("A") then
+                                    component.renderingPlaneAnimationParam = renderPlaneCName
+                                    component:RefreshAppearance()
+                                end
+                            end
+                        elseif BetterUI.ButtonAdd() then
+                            RenderPlaneFix.customPatchComponents[component.name.value] = CustomPatchType.RenderPlane
+                        end
+                        ImGui.SameLine()
+                        ImGui.Text(component.name.value)
+                        ImGui.PopID()
+                    end
+                    ImGui.PopID()
+                end
+            end
+
+            ImGui.Separator()
+            if ImGui.CollapsingHeader("Patch Manager") then
+                ImGui.PushID("custom-patch")
+                for name, patch in next, RenderPlaneFix.customPatchComponents do
+                    ImGui.PushID(name)
+                    if BetterUI.ButtonRemove() then
+                        RenderPlaneFix.customPatchComponents[name] = nil
+                    end
+                    if patch == CustomPatchType.Empty then
+                        ImGui.SameLine()
+                        if BetterUI.SquareButton("R") then
+                            RenderPlaneFix.customPatchComponents[name] = CustomPatchType.RenderPlane
+                        end
+                    elseif patch == CustomPatchType.RenderPlane then
+                        ImGui.SameLine()
+                        if BetterUI.SquareButton("E") then
+                            RenderPlaneFix.customPatchComponents[name] = CustomPatchType.Empty
+                        end
+                    end
+                    ImGui.SameLine()
+                    ImGui.Text(name)
+                    ImGui.PopID()
+                end
+                ImGui.PopID()
+            end
+        end
+        ImGui.Separator()
+
         ImGui.Text("Patch |")
         ImGui.SameLine()
 
