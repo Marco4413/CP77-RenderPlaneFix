@@ -58,10 +58,8 @@ local RenderPlaneFix = {
     --  not match against that pattern.
     componentNamePatternsBlacklist = {
         "_shadow$", "_shadowmesh$", "^beard_shadow",
-        "^h[ehtx]b?_%d%d%d_p?[wm][abcf]a?__",
+        "^[hn][ehtx01]b?_%d%d%d_p?[wm][abcf]a?_",
         "^Morph",
-        "^[ntw][0x]_000_p?[mw]a_base__",
-        "^[ant][0x]_00[08]_p?[mw]a__?fpp_",
     },
     componentNameBlacklist = {
         ["shoe_lights"] = true,
