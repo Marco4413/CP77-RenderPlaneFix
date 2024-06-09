@@ -175,6 +175,11 @@ local function Event_OnDraw()
         ImGui.TextWrapped(table.concat{
             "Mod Requirements Met: ", RenderPlaneFix:AreRequirementsMet() and "Yes" or "No"
         })
+
+        if not RenderPlaneFix:AreRequirementsMet() then
+            return
+        end
+
         ImGui.TextWrapped(table.concat{
             "Patch Registered: ", RenderPlaneFix:IsPatchRegistered() and "Yes" or "No"
         })
