@@ -23,7 +23,7 @@ also keeping compatibility with refits!
 ### Requirements
 
 - [CET 1.32.2+](https://github.com/yamashi/CyberEngineTweaks)
-- [Codeware 1.9.3+](https://github.com/psiberx/cp2077-codeware)
+- [Codeware 1.10.0+](https://github.com/psiberx/cp2077-codeware)
 - [RED4ext 1.25.0+](https://github.com/WopsS/RED4ext)
 
 ### Credits
