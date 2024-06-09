@@ -251,6 +251,28 @@ function RenderPlaneFix:RunPatchOnEntity(entity)
     end
 end
 
+function RenderPlaneFix:GetPatchableComponentsOfEntity(entity)
+    if not self:AreRequirementsMet() then return { }; end
+
+    local entSkinnedMeshComponentCName = CName.new("entSkinnedMeshComponent")
+    local entGarmentSkinnedMeshComponentCName = CName.new("entGarmentSkinnedMeshComponent")
+    local entMorphTargetSkinnedMeshComponentCName = CName.new("entMorphTargetSkinnedMeshComponent")
+
+    local patchables = { }
+
+    local entityComponents = entity:GetComponents()
+    for _, component in next, entityComponents do
+        local componentClassName = component:GetClassName()
+        if (componentClassName == entSkinnedMeshComponentCName
+            or componentClassName == entGarmentSkinnedMeshComponentCName
+            or componentClassName == entMorphTargetSkinnedMeshComponentCName) then
+            table.insert(patchables, component)
+        end
+    end
+
+    return patchables
+end
+
 local function Event_OnInit()
     if not RenderPlaneFix:AreRequirementsMet() then
         RenderPlaneFix.Log("Mod Requirements not met, please install Codeware")
