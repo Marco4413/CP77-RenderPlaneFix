@@ -63,10 +63,55 @@ local RenderPlaneFix = {
     },
     patchedComponents = { },
     unpatchedComponents = { },
+    _configInitialized = false,
 }
 
 function RenderPlaneFix.Log(...)
     print(table.concat{"[ ", os.date("%x %X"), " ][ RenderPlaneFix ]: ", ...})
+end
+
+function RenderPlaneFix:ResetConfig()
+    self.customPatch = false
+    self.customPatchComponents = {
+        ["t0_005_pwa_body__t_bug7718"] = CustomPatchType.RenderPlane,
+        ["t0_005_pwa_body__t_bug_shirt"] = CustomPatchType.RenderPlane,
+        ["g1_014_pwa_gloves__ninja_gloves"] = CustomPatchType.RenderPlane,
+        ["t2_084_pwa_jacket__short_sleeves_dec_nusa"] = CustomPatchType.RenderPlane,
+    }
+end
+
+function RenderPlaneFix:SaveConfig()
+    local file = io.open("data/config.json", "w")
+    file:write(json.encode({
+        customPatch = self.customPatch,
+        customPatchComponents = self.customPatchComponents,
+    }))
+    io.close(file)
+end
+
+function RenderPlaneFix:LoadConfig()
+    local ok = pcall(function ()
+        local file = io.open("data/config.json", "r")
+        local configText = file:read("*a")
+        io.close(file)
+
+        local config = json.decode(configText)
+        if not config then return; end
+
+        if type(config.customPatch) == "boolean" then
+            self.customPatch = config.customPatch
+        end
+
+        if type(config.customPatchComponents) == "table" then
+            self.customPatchComponents = { }
+            for name, patch in next, config.customPatchComponents do
+                if patch == CustomPatchType.Empty or patch == CustomPatchType.RenderPlane then
+                    self.customPatchComponents[name] = patch
+                end
+            end
+        end
+    end)
+    if not ok then self:SaveConfig(); end
 end
 
 function RenderPlaneFix:ShouldPatchComponentByName(componentName)
@@ -163,14 +208,6 @@ function RenderPlaneFix:RunAutoPatchOnEntity(entity)
     return true
 end
 
-local function Event_OnInit()
-    if RenderPlaneFix:AreRequirementsMet() then
-        RenderPlaneFix:RegisterPatch()
-    else
-        RenderPlaneFix.Log("Mod Requirements not met, please install Codeware")
-    end
-end
-
 function RenderPlaneFix:RunCustomPatchOnEntity(entity)
     if not self:AreRequirementsMet() then return false; end
 
@@ -214,7 +251,22 @@ function RenderPlaneFix:RunPatchOnEntity(entity)
     end
 end
 
+local function Event_OnInit()
+    if not RenderPlaneFix:AreRequirementsMet() then
+        RenderPlaneFix.Log("Mod Requirements not met, please install Codeware")
+        return
+    end
+
+    RenderPlaneFix:ResetConfig()
+    RenderPlaneFix:LoadConfig()
+    RenderPlaneFix._configInitialized = true
+    RenderPlaneFix:RegisterPatch()
+end
+
 local function Event_OnShutdown()
+    if RenderPlaneFix._configInitialized then
+        RenderPlaneFix:SaveConfig()
+    end
     RenderPlaneFix:UnregisterPatch()
 end
 
@@ -273,6 +325,18 @@ local function Event_OnDraw()
                 RenderPlaneFix:RunPatchOnEntity(player)
             end
         end
+        ImGui.Separator()
+
+        ImGui.Text("Config |")
+        ImGui.SameLine()
+
+        if BetterUI.FitButtonN(3, "Load") then RenderPlaneFix:LoadConfig(); end
+        ImGui.SameLine()
+
+        if BetterUI.FitButtonN(2, "Save") then RenderPlaneFix:SaveConfig(); end
+        ImGui.SameLine()
+
+        if BetterUI.FitButtonN(1, "Reset") then RenderPlaneFix:ResetConfig(); end
         ImGui.Separator()
     end
 end
