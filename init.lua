@@ -78,15 +78,30 @@ function RenderPlaneFix:ResetConfig()
         ["g1_014_pwa_gloves__ninja_gloves"] = CustomPatchType.RenderPlane,
         ["t2_084_pwa_jacket__short_sleeves_dec_nusa"] = CustomPatchType.RenderPlane,
     }
+    self:MigrateConfigFromVersion(nil)
 end
 
 function RenderPlaneFix:SaveConfig()
     local file = io.open("data/config.json", "w")
     file:write(json.encode({
+        version = 1,
         customPatch = self.customPatch,
         customPatchComponents = self.customPatchComponents,
     }))
     io.close(file)
+end
+
+function RenderPlaneFix:MigrateConfigFromVersion(version)
+    if not version or type(version) ~= "number" then
+        -- Migrate from version 0 to 1
+        version = 1
+        self.customPatch["t0_005_pma_body__t_bug5280"] = CustomPatchType.RenderPlane
+        self.customPatch["t0_005_pma_body__t_bug_shirt2655"] = CustomPatchType.RenderPlane
+        self.customPatch["g1_014_pma_gloves__ninja_gloves"] = CustomPatchType.RenderPlane
+        self.customPatch["t2_084_pma__short_sleeves_dec_nusa"] = CustomPatchType.RenderPlane
+    end
+
+    -- Migrate from version x to latest
 end
 
 function RenderPlaneFix:LoadConfig()
@@ -110,6 +125,8 @@ function RenderPlaneFix:LoadConfig()
                 end
             end
         end
+
+        self:MigrateConfigFromVersion(config.version)
     end)
     if not ok then self:SaveConfig(); end
 end
