@@ -343,10 +343,7 @@ local function Event_OnDraw()
         ImGui.Separator()
 
         RenderPlaneFix.customPatch = ImGui.Checkbox("Use Custom Patch", RenderPlaneFix.customPatch)
-        ImGui.TextWrapped(table.concat{
-            "Press the arrow if the menu does not open.",
-            " Nested sub-menus are a bit broken but I need them here."
-        })
+        ImGui.TextWrapped("Press the arrow if the sub-menu does not open.")
 
         if ImGui.CollapsingHeader("Custom Patch") then
             ImGui.TextWrapped(table.concat{
@@ -360,19 +357,29 @@ local function Event_OnDraw()
                 " You can try to work around those by manually defining what to patch."
             })
 
-            ImGui.TextWrapped("The Component Selector menu shows all components (equipped by the player) which can be patched.")
-            ImGui.Bullet(); ImGui.SameLine(); ImGui.TextWrapped("Pressing the + or - buttons will add or remove the item from the patch list.")
-            ImGui.Bullet(); ImGui.SameLine(); ImGui.TextWrapped(
-                "If the item is on the patch list, pressing the R or E buttons will set the component to either 'renderPlane' or 'None'.")
-            ImGui.Bullet(); ImGui.SameLine(); ImGui.TextWrapped(table.concat{
-                "If the item is on the patch list, pressing the A button will simulate the patch being applied.",
-                " Once pressed, you should swap weapons or aim to see the changes."
+            ImGui.PushStyleColor(ImGuiCol.Text, .9, .1, 0, 1)
+            ImGui.TextWrapped(table.concat{
+                "<!> You can share your custom patch by giving this mod's config file to others.",
+                " The config file is found within this mod's CET folder ('Cyberpunk2077/bin/x64/plugins/cyber_engine_tweaks/mods/RenderPlaneFix/data/config.json').",
             })
-
-            ImGui.TextWrapped("The Patch Manager menu shows all components which will be patched (if found) and allows you to remove them or change their type.")
+            ImGui.PopStyleColor()
 
             ImGui.Separator()
             if ImGui.CollapsingHeader("Component Selector") then
+                ImGui.TextWrapped("This menu shows all components (equipped by the player) which can be patched.")
+                ImGui.Bullet(); ImGui.SameLine(); ImGui.TextWrapped("Pressing the + or - buttons will add or remove the item from the patch list.")
+                ImGui.Bullet(); ImGui.SameLine(); ImGui.TextWrapped(
+                    "If the item is on the patch list, pressing the R or E buttons will set the component to either 'renderPlane' or 'None'.")
+                ImGui.Bullet(); ImGui.SameLine(); ImGui.TextWrapped(table.concat{
+                    "If the item is on the patch list, pressing the A button will simulate the patch being applied.",
+                    " Once pressed, you should swap weapons or aim to see the changes."
+                })
+                ImGui.Bullet(); ImGui.SameLine(); ImGui.TextWrapped(
+                    "If the auto-patch would apply on the item, its name will be shown in green.")
+                ImGui.Bullet(); ImGui.SameLine(); ImGui.TextWrapped(
+                    "If the auto-patch would apply on the item but the item is already set to 'renderPlane', its name will be shown in yellow.")
+                ImGui.Separator()
+
                 local player = Game.GetPlayer()
                 if not player then
                     ImGui.TextWrapped("No player found, please load a game.")
@@ -436,6 +443,12 @@ local function Event_OnDraw()
 
             ImGui.Separator()
             if ImGui.CollapsingHeader("Patch Manager") then
+                ImGui.TextWrapped("This menu shows all components which will be patched (if found).")
+                ImGui.Bullet(); ImGui.SameLine(); ImGui.TextWrapped("Pressing the - button will remove the item from the patch list.")
+                ImGui.Bullet(); ImGui.SameLine(); ImGui.TextWrapped(
+                    "If the item is on the patch list, pressing the R or E buttons will set the component to either 'renderPlane' or 'None'.")
+                ImGui.Separator()
+
                 ImGui.PushID("custom-patch")
                 for name, patch in next, RenderPlaneFix.customPatchComponents do
                     ImGui.PushID(name)
