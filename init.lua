@@ -414,7 +414,20 @@ local function Event_OnDraw()
                             RenderPlaneFix.customPatchComponents[component.name.value] = CustomPatchType.RenderPlane
                         end
                         ImGui.SameLine()
+
+                        local shouldBePatched = RenderPlaneFix:ShouldPatchComponentByName(component.name.value)
+                        if shouldBePatched then
+                            if component.renderingPlaneAnimationParam == emptyCName then
+                                ImGui.PushStyleColor(ImGuiCol.Text, .1, .9, 0, 1)
+                            else
+                                ImGui.PushStyleColor(ImGuiCol.Text, .9, .9, 0, 1)
+                            end
+                        end
+
                         ImGui.Text(component.name.value)
+
+                        if shouldBePatched then ImGui.PopStyleColor(); end
+
                         ImGui.PopID()
                     end
                     ImGui.PopID()
