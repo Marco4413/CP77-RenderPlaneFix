@@ -64,6 +64,7 @@ local RenderPlaneFix = {
     patchedComponents = { },
     unpatchedComponents = { },
     _configInitialized = false,
+    _classesToPatch = { },
 }
 
 function RenderPlaneFix.Log(...)
@@ -142,6 +143,14 @@ function RenderPlaneFix:ShouldPatchComponentByName(componentName)
     return true
 end
 
+function RenderPlaneFix:IsPatchableClass(classInstance)
+    local className = classInstance:GetClassName()
+    for _, toMatch in next, self._classesToPatch do
+        if className == toMatch then return true; end
+    end
+    return false
+end
+
 function RenderPlaneFix:RegisterPatch()
     if not self:AreRequirementsMet() or self:IsPatchRegistered() then return false; end
 
@@ -192,10 +201,6 @@ end
 function RenderPlaneFix:RunAutoPatchOnEntity(entity)
     if not self:AreRequirementsMet() then return false; end
 
-    local entSkinnedMeshComponentCName = CName.new("entSkinnedMeshComponent")
-    local entGarmentSkinnedMeshComponentCName = CName.new("entGarmentSkinnedMeshComponent")
-    local entMorphTargetSkinnedMeshComponentCName = CName.new("entMorphTargetSkinnedMeshComponent")
-
     local emptyCName = CName.new()
     local renderPlaneCName = CName.new("renderPlane")
 
@@ -204,13 +209,9 @@ function RenderPlaneFix:RunAutoPatchOnEntity(entity)
 
     local entityComponents = entity:GetComponents()
     for _, component in next, entityComponents do
-        local componentClassName = component:GetClassName()
-        if (componentClassName == entSkinnedMeshComponentCName
-            or componentClassName == entGarmentSkinnedMeshComponentCName
-            or componentClassName == entMorphTargetSkinnedMeshComponentCName) then
-            if (component.renderingPlaneAnimationParam == emptyCName
-                --and garmentSkinnedMeshComponent.name.value:find("^[hlstg][012]_%d%d%d_")
-                and self:ShouldPatchComponentByName(component.name.value)) then
+        if self:IsPatchableClass(component) then
+            if (self:ShouldPatchComponentByName(component.name.value)
+                and component.renderingPlaneAnimationParam == emptyCName) then
                 component.renderingPlaneAnimationParam = renderPlaneCName
                 component:RefreshAppearance()
             end
@@ -228,10 +229,6 @@ end
 function RenderPlaneFix:RunCustomPatchOnEntity(entity)
     if not self:AreRequirementsMet() then return false; end
 
-    local entSkinnedMeshComponentCName = CName.new("entSkinnedMeshComponent")
-    local entGarmentSkinnedMeshComponentCName = CName.new("entGarmentSkinnedMeshComponent")
-    local entMorphTargetSkinnedMeshComponentCName = CName.new("entMorphTargetSkinnedMeshComponent")
-
     local emptyCName = CName.new()
     local renderPlaneCName = CName.new("renderPlane")
 
@@ -240,10 +237,7 @@ function RenderPlaneFix:RunCustomPatchOnEntity(entity)
 
     local entityComponents = entity:GetComponents()
     for _, component in next, entityComponents do
-        local componentClassName = component:GetClassName()
-        if (componentClassName == entSkinnedMeshComponentCName
-            or componentClassName == entGarmentSkinnedMeshComponentCName
-            or componentClassName == entMorphTargetSkinnedMeshComponentCName) then
+        if self:IsPatchableClass(component) then
             local patch = self.customPatchComponents[component.name.value]
             if patch then
                 component.renderingPlaneAnimationParam = (patch == CustomPatchType.RenderPlane and renderPlaneCName or emptyCName)
@@ -270,18 +264,11 @@ end
 function RenderPlaneFix:GetPatchableComponentsOfEntity(entity)
     if not self:AreRequirementsMet() then return { }; end
 
-    local entSkinnedMeshComponentCName = CName.new("entSkinnedMeshComponent")
-    local entGarmentSkinnedMeshComponentCName = CName.new("entGarmentSkinnedMeshComponent")
-    local entMorphTargetSkinnedMeshComponentCName = CName.new("entMorphTargetSkinnedMeshComponent")
-
     local patchables = { }
 
     local entityComponents = entity:GetComponents()
     for _, component in next, entityComponents do
-        local componentClassName = component:GetClassName()
-        if (componentClassName == entSkinnedMeshComponentCName
-            or componentClassName == entGarmentSkinnedMeshComponentCName
-            or componentClassName == entMorphTargetSkinnedMeshComponentCName) then
+        if self:IsPatchableClass(component) then
             table.insert(patchables, component)
         end
     end
@@ -294,6 +281,13 @@ local function Event_OnInit()
         RenderPlaneFix.Log("Mod Requirements not met, please install Codeware")
         return
     end
+
+    RenderPlaneFix._classesToPatch = {
+        CName.new("entMeshComponent"),
+        CName.new("entSkinnedMeshComponent"),
+        CName.new("entGarmentSkinnedMeshComponent"),
+        CName.new("entMorphTargetSkinnedMeshComponent"),
+    }
 
     RenderPlaneFix:ResetConfig()
     RenderPlaneFix:LoadConfig()
