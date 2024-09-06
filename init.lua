@@ -95,10 +95,10 @@ function RenderPlaneFix:MigrateConfigFromVersion(version)
     if not version or type(version) ~= "number" then
         -- Migrate from version 0 to 1
         version = 1
-        self.customPatch["t0_005_pma_body__t_bug5280"] = CustomPatchType.RenderPlane
-        self.customPatch["t0_005_pma_body__t_bug_shirt2655"] = CustomPatchType.RenderPlane
-        self.customPatch["g1_014_pma_gloves__ninja_gloves"] = CustomPatchType.RenderPlane
-        self.customPatch["t2_084_pma__short_sleeves_dec_nusa"] = CustomPatchType.RenderPlane
+        self.customPatchComponents["t0_005_pma_body__t_bug5280"] = CustomPatchType.RenderPlane
+        self.customPatchComponents["t0_005_pma_body__t_bug_shirt2655"] = CustomPatchType.RenderPlane
+        self.customPatchComponents["g1_014_pma_gloves__ninja_gloves"] = CustomPatchType.RenderPlane
+        self.customPatchComponents["t2_084_pma__short_sleeves_dec_nusa"] = CustomPatchType.RenderPlane
     end
 
     -- Migrate from version x to latest
