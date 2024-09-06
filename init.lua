@@ -218,7 +218,7 @@ function RenderPlaneFix:RunAutoPatchOnEntity(entity)
 
             if component.renderingPlaneAnimationParam == renderPlaneCName then
                 table.insert(self.patchedComponents, component.name.value)
-            elseif component.renderingPlaneAnimationParam == emptyCName then
+            else
                 table.insert(self.unpatchedComponents, component.name.value)
             end
         end
@@ -246,7 +246,7 @@ function RenderPlaneFix:RunCustomPatchOnEntity(entity)
 
             if component.renderingPlaneAnimationParam == renderPlaneCName then
                 table.insert(self.patchedComponents, component.name.value)
-            elseif component.renderingPlaneAnimationParam == emptyCName then
+            else
                 table.insert(self.unpatchedComponents, component.name.value)
             end
         end
