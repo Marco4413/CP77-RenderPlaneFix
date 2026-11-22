@@ -24,15 +24,28 @@ OTHER DEALINGS IN THE SOFTWARE.
 ]]
 
 local BetterUI = require "BetterUI"
+local Enum     = require "Enum"
 
 ---@enum CustomPatchType
-local CustomPatchType = { Empty = 0, RenderPlane = 1 }
+local CustomPatchType = Enum.New{ Empty = 0, RenderPlane = 1 }
+
+---@enum PatchType
+local PatchType = Enum.New{
+    Auto   = 1, -- 0b0001
+    Custom = 8, -- 0b1000
+
+    AutoAndCustom = 9, -- 0b1001
+}
+
 local RenderPlaneFix = {
+    CustomPatchType = CustomPatchType,
+    PatchType = PatchType,
+
     showUI = false,
-    customPatch = false,
+    patchType = PatchType.Auto,
+
     ---@type table<string, CustomPatchType>
     customPatchComponents = { },
-    CustomPatchType = CustomPatchType,
     -- The whitelist is matched first, so it overrides any blacklist setting
     componentNameWhitelist = {
         ["t0_000_pma_base__full_seamfix"] = true,
@@ -61,10 +74,16 @@ local RenderPlaneFix = {
         ["body"]   = true,
         ["beard"]  = true,
     },
-    patchedComponents = { },
-    unpatchedComponents = { },
+
+    _nEmpty = nil,
+    _nRenderPlane = nil,
+
     _configInitialized = false,
     _classesToPatch = { },
+
+    ---Deprecated: see patchType
+    ---@deprecated
+    customPatch = false,
 }
 
 function RenderPlaneFix.Log(...)
@@ -72,7 +91,7 @@ function RenderPlaneFix.Log(...)
 end
 
 function RenderPlaneFix:ResetConfig()
-    self.customPatch = false
+    self.patchType = PatchType.Auto
     self.customPatchComponents = {
         ["t0_005_pwa_body__t_bug7718"] = CustomPatchType.RenderPlane,
         ["t0_005_pwa_body__t_bug_shirt"] = CustomPatchType.RenderPlane,
@@ -85,8 +104,8 @@ end
 function RenderPlaneFix:SaveConfig()
     local file = io.open("data/config.json", "w")
     file:write(json.encode({
-        version = 1,
-        customPatch = self.customPatch,
+        version = 2,
+        patchType = PatchType[self.patchType],
         customPatchComponents = self.customPatchComponents,
     }))
     io.close(file)
@@ -102,6 +121,11 @@ function RenderPlaneFix:MigrateConfigFromVersion(version)
         self.customPatchComponents["t2_084_pma__short_sleeves_dec_nusa"] = CustomPatchType.RenderPlane
     end
 
+    if version <= 1 then
+        version = 2
+        self.patchType = self.customPatch and PatchType.Custom or PatchType.Auto
+    end
+
     -- Migrate from version x to latest
 end
 
@@ -114,8 +138,8 @@ function RenderPlaneFix:LoadConfig()
         local config = json.decode(configText)
         if not config then return; end
 
-        if type(config.customPatch) == "boolean" then
-            self.customPatch = config.customPatch
+        if type(config.patchType) == "string" and PatchType[config.patchType] then
+            self.patchType = PatchType[config.patchType]
         end
 
         if type(config.customPatchComponents) == "table" then
@@ -125,6 +149,12 @@ function RenderPlaneFix:LoadConfig()
                     self.customPatchComponents[name] = patch
                 end
             end
+        end
+
+        -- DEPRECATED FIELDS
+
+        if type(config.customPatch) == "boolean" then
+            self.customPatch = config.customPatch
         end
 
         self:MigrateConfigFromVersion(config.version)
@@ -198,28 +228,30 @@ function RenderPlaneFix:AreRequirementsMet()
     return Codeware ~= nil
 end
 
+function RenderPlaneFix:_GetEmptyCName()
+    if self._nEmpty then return self._nEmpty; end
+    self._nEmpty = CName.new()
+    return self._nEmpty
+end
+
+function RenderPlaneFix:_GetRenderPlaneCName()
+    if self._nRenderPlane then return self._nRenderPlane; end
+    self._nRenderPlane = CName.new("renderPlane")
+    return self._nRenderPlane
+end
+
 function RenderPlaneFix:RunAutoPatchOnEntity(entity)
     if not self:AreRequirementsMet() then return false; end
 
-    local emptyCName = CName.new()
-    local renderPlaneCName = CName.new("renderPlane")
-
-    self.patchedComponents = { }
-    self.unpatchedComponents = { }
+    local nEmpty       = self:_GetEmptyCName()
+    local nRenderPlane = self:_GetRenderPlaneCName()
 
     local entityComponents = entity:GetComponents()
     for _, component in next, entityComponents do
         if self:IsPatchableClass(component) then
             if (self:ShouldPatchComponentByName(component.name.value)
-                and component.renderingPlaneAnimationParam == emptyCName) then
-                component.renderingPlaneAnimationParam = renderPlaneCName
-                component:RefreshAppearance()
-            end
-
-            if component.renderingPlaneAnimationParam == renderPlaneCName then
-                table.insert(self.patchedComponents, component.name.value)
-            else
-                table.insert(self.unpatchedComponents, component.name.value)
+                and component.renderingPlaneAnimationParam == nEmpty) then
+                component.renderingPlaneAnimationParam = nRenderPlane
             end
         end
     end
@@ -229,25 +261,15 @@ end
 function RenderPlaneFix:RunCustomPatchOnEntity(entity)
     if not self:AreRequirementsMet() then return false; end
 
-    local emptyCName = CName.new()
-    local renderPlaneCName = CName.new("renderPlane")
-
-    self.patchedComponents = { }
-    self.unpatchedComponents = { }
+    local nEmpty       = self:_GetEmptyCName()
+    local nRenderPlane = self:_GetRenderPlaneCName()
 
     local entityComponents = entity:GetComponents()
     for _, component in next, entityComponents do
         if self:IsPatchableClass(component) then
             local patch = self.customPatchComponents[component.name.value]
             if patch then
-                component.renderingPlaneAnimationParam = (patch == CustomPatchType.RenderPlane and renderPlaneCName or emptyCName)
-                component:RefreshAppearance()
-            end
-
-            if component.renderingPlaneAnimationParam == renderPlaneCName then
-                table.insert(self.patchedComponents, component.name.value)
-            else
-                table.insert(self.unpatchedComponents, component.name.value)
+                component.renderingPlaneAnimationParam = (patch == CustomPatchType.RenderPlane and nRenderPlane or nEmpty)
             end
         end
     end
@@ -255,10 +277,18 @@ function RenderPlaneFix:RunCustomPatchOnEntity(entity)
 end
 
 function RenderPlaneFix:RunPatchOnEntity(entity)
-    if RenderPlaneFix.customPatch then
-        return RenderPlaneFix:RunCustomPatchOnEntity(entity)
+    if self.patchType == PatchType.Auto then
+        return self:RunAutoPatchOnEntity(entity)
+    elseif self.patchType == PatchType.Custom then
+        return self:RunCustomPatchOnEntity(entity)
+    elseif self.patchType == PatchType.AutoAndCustom then
+        local applied = false
+        applied = applied or self:RunAutoPatchOnEntity(entity)
+        applied = applied or self:RunCustomPatchOnEntity(entity)
+        return applied
     end
-    return RenderPlaneFix:RunAutoPatchOnEntity(entity)
+
+    assert(false, "unhandled PatchType")
 end
 
 function RenderPlaneFix:GetPatchableComponentsOfEntity(entity)
@@ -303,47 +333,67 @@ local function Event_OnShutdown()
 end
 
 local function Event_OnDraw()
-    if not RenderPlaneFix.showUI then return; end
+    local mod = RenderPlaneFix
+    if not mod.showUI then return; end
     if ImGui.Begin("Render Plane Fix") then
         ImGui.TextWrapped(table.concat{
-            "Mod Requirements Met: ", RenderPlaneFix:AreRequirementsMet() and "Yes" or "No"
+            "Mod Requirements Met: ", mod:AreRequirementsMet() and "Yes" or "No"
         })
 
-        if not RenderPlaneFix:AreRequirementsMet() then
+        if not mod:AreRequirementsMet() then
             return
         end
 
         ImGui.TextWrapped(table.concat{
-            "Patch Registered: ", RenderPlaneFix:IsPatchRegistered() and "Yes" or "No"
+            "Patch Registered: ", mod:IsPatchRegistered() and "Yes" or "No"
         })
         ImGui.Separator()
-        
+
+        local player              = nil
+        local patchableComponents = nil
+        local nEmpty              = mod:_GetEmptyCName()
+        local nRenderPlane        = mod:_GetRenderPlaneCName()
+
         if ImGui.CollapsingHeader("Patched Components") then
             ImGui.TextWrapped(table.concat{
-                "ALL components that have 'renderPlane' set are shown here.",
+                "ALL player components that have 'renderPlane' set are shown here.",
                 " Which does not strictly mean that they were patched by this mod."
             })
-            for i=1, #RenderPlaneFix.patchedComponents do
-                ImGui.Bullet()
-                ImGui.TextWrapped(RenderPlaneFix.patchedComponents[i])
-            end
-        end
-        ImGui.Separator()
-        
-        if ImGui.CollapsingHeader("Unpatched Components") then
-            ImGui.TextWrapped(table.concat{
-                "All components that can be patched are shown here.",
-                " This section is mainly used to see what components were filtered out."
-            })
-            for i=1, #RenderPlaneFix.unpatchedComponents do
-                ImGui.Bullet()
-                ImGui.TextWrapped(RenderPlaneFix.unpatchedComponents[i])
+
+            player = player or Game.GetPlayer()
+            if player then
+                patchableComponents = patchableComponents or mod:GetPatchableComponentsOfEntity(player)
+                for _, component in next, patchableComponents do
+                    if mod:IsPatchableClass(component) and component.renderingPlaneAnimationParam == nRenderPlane then
+                        ImGui.Bullet()
+                        ImGui.TextWrapped(component.name.value)
+                    end
+                end
             end
         end
         ImGui.Separator()
 
-        RenderPlaneFix.customPatch = ImGui.Checkbox("Use Custom Patch", RenderPlaneFix.customPatch)
-        ImGui.TextWrapped("Press the arrow if the sub-menu does not open.")
+        if ImGui.CollapsingHeader("Unpatched Components") then
+            ImGui.TextWrapped(table.concat{
+                "All player components that can be patched are shown here.",
+                " This section is mainly used to see what components were filtered out."
+            })
+
+            player = player or Game.GetPlayer()
+            if player then
+                patchableComponents = patchableComponents or mod:GetPatchableComponentsOfEntity(player)
+                for _, component in next, patchableComponents do
+                    if mod:IsPatchableClass(component) and component.renderingPlaneAnimationParam ~= nRenderPlane then
+                        ImGui.Bullet()
+                        ImGui.TextWrapped(component.name.value)
+                    end
+                end
+            end
+        end
+        ImGui.Separator()
+
+        mod.patchType = Enum.ImCombo(PatchType, mod.patchType, "Patch Type")
+        ImGui.Separator()
 
         if ImGui.CollapsingHeader("Custom Patch") then
             ImGui.TextWrapped(table.concat{
@@ -369,7 +419,7 @@ local function Event_OnDraw()
                 ImGui.TextWrapped("This menu shows all components (equipped by the player) which can be patched.")
                 ImGui.Bullet(); ImGui.SameLine(); ImGui.TextWrapped("Pressing the + or - buttons will add or remove the item from the patch list.")
                 ImGui.Bullet(); ImGui.SameLine(); ImGui.TextWrapped(
-                    "If the item is on the patch list, pressing the R or E buttons will set the component to either 'renderPlane' or 'None'.")
+                    "If the item is on the patch list, pressing the R or E buttons will set the component to either 'renderPlane' or '<empty>'.")
                 ImGui.Bullet(); ImGui.SameLine(); ImGui.TextWrapped(table.concat{
                     "If the item is on the patch list, pressing the A button will simulate the patch being applied.",
                     " Once pressed, you should swap weapons or aim to see the changes."
@@ -380,51 +430,46 @@ local function Event_OnDraw()
                     "If the auto-patch would apply on the item but the item is already set to 'renderPlane', its name will be shown in yellow.")
                 ImGui.Separator()
 
-                local player = Game.GetPlayer()
+                player = player or Game.GetPlayer()
                 if not player then
                     ImGui.TextWrapped("No player found, please load a game.")
                 else
-                    local emptyCName = CName.new()
-                    local renderPlaneCName = CName.new("renderPlane")
-
-                    local patchables = RenderPlaneFix:GetPatchableComponentsOfEntity(player)
+                    patchableComponents = patchableComponents or mod:GetPatchableComponentsOfEntity(player)
                     ImGui.PushID("custom-components")
-                    for _, component in next, patchables do
+                    for _, component in next, patchableComponents do
                         ImGui.PushID(component.name.value)
-                        local patch = RenderPlaneFix.customPatchComponents[component.name.value]
+                        local patch = mod.customPatchComponents[component.name.value]
                         if patch then
                             if BetterUI.ButtonRemove() then
-                                RenderPlaneFix.customPatchComponents[component.name.value] = nil
+                                mod.customPatchComponents[component.name.value] = nil
                             end
                             if patch == CustomPatchType.Empty then
                                 ImGui.SameLine()
                                 if BetterUI.SquareButton("R") then
-                                    RenderPlaneFix.customPatchComponents[component.name.value] = CustomPatchType.RenderPlane
+                                    mod.customPatchComponents[component.name.value] = CustomPatchType.RenderPlane
                                 end
                                 ImGui.SameLine()
                                 if BetterUI.SquareButton("A") then
-                                    component.renderingPlaneAnimationParam = emptyCName
-                                    component:RefreshAppearance()
+                                    component.renderingPlaneAnimationParam = nEmpty
                                 end
                             elseif patch == CustomPatchType.RenderPlane then
                                 ImGui.SameLine()
                                 if BetterUI.SquareButton("E") then
-                                    RenderPlaneFix.customPatchComponents[component.name.value] = CustomPatchType.Empty
+                                    mod.customPatchComponents[component.name.value] = CustomPatchType.Empty
                                 end
                                 ImGui.SameLine()
                                 if BetterUI.SquareButton("A") then
-                                    component.renderingPlaneAnimationParam = renderPlaneCName
-                                    component:RefreshAppearance()
+                                    component.renderingPlaneAnimationParam = nRenderPlane
                                 end
                             end
                         elseif BetterUI.ButtonAdd() then
-                            RenderPlaneFix.customPatchComponents[component.name.value] = CustomPatchType.RenderPlane
+                            mod.customPatchComponents[component.name.value] = CustomPatchType.RenderPlane
                         end
                         ImGui.SameLine()
 
-                        local shouldBePatched = RenderPlaneFix:ShouldPatchComponentByName(component.name.value)
+                        local shouldBePatched = mod:ShouldPatchComponentByName(component.name.value)
                         if shouldBePatched then
-                            if component.renderingPlaneAnimationParam == emptyCName then
+                            if component.renderingPlaneAnimationParam == nEmpty then
                                 ImGui.PushStyleColor(ImGuiCol.Text, .1, .9, 0, 1)
                             else
                                 ImGui.PushStyleColor(ImGuiCol.Text, .9, .9, 0, 1)
@@ -446,24 +491,24 @@ local function Event_OnDraw()
                 ImGui.TextWrapped("This menu shows all components which will be patched (if found).")
                 ImGui.Bullet(); ImGui.SameLine(); ImGui.TextWrapped("Pressing the - button will remove the item from the patch list.")
                 ImGui.Bullet(); ImGui.SameLine(); ImGui.TextWrapped(
-                    "If the item is on the patch list, pressing the R or E buttons will set the component to either 'renderPlane' or 'None'.")
+                    "If the item is on the patch list, pressing the R or E buttons will set the component to either 'renderPlane' or '<empty>'.")
                 ImGui.Separator()
 
                 ImGui.PushID("custom-patch")
-                for name, patch in next, RenderPlaneFix.customPatchComponents do
+                for name, patch in next, mod.customPatchComponents do
                     ImGui.PushID(name)
                     if BetterUI.ButtonRemove() then
-                        RenderPlaneFix.customPatchComponents[name] = nil
+                        mod.customPatchComponents[name] = nil
                     end
                     if patch == CustomPatchType.Empty then
                         ImGui.SameLine()
                         if BetterUI.SquareButton("R") then
-                            RenderPlaneFix.customPatchComponents[name] = CustomPatchType.RenderPlane
+                            mod.customPatchComponents[name] = CustomPatchType.RenderPlane
                         end
                     elseif patch == CustomPatchType.RenderPlane then
                         ImGui.SameLine()
                         if BetterUI.SquareButton("E") then
-                            RenderPlaneFix.customPatchComponents[name] = CustomPatchType.Empty
+                            mod.customPatchComponents[name] = CustomPatchType.Empty
                         end
                     end
                     ImGui.SameLine()
@@ -478,16 +523,16 @@ local function Event_OnDraw()
         ImGui.Text("Patch |")
         ImGui.SameLine()
 
-        if BetterUI.FitButtonN(3, "Register") then RenderPlaneFix:RegisterPatch(); end
+        if BetterUI.FitButtonN(3, "Register") then mod:RegisterPatch(); end
         ImGui.SameLine()
 
-        if BetterUI.FitButtonN(2, "Unregister") then RenderPlaneFix:UnregisterPatch(); end
+        if BetterUI.FitButtonN(2, "Unregister") then mod:UnregisterPatch(); end
         ImGui.SameLine()
 
         if BetterUI.FitButtonN(1, "Run") then
             local player = Game.GetPlayer()
             if player then
-                RenderPlaneFix:RunPatchOnEntity(player)
+                mod:RunPatchOnEntity(player)
             end
         end
         ImGui.Separator()
@@ -495,13 +540,13 @@ local function Event_OnDraw()
         ImGui.Text("Config |")
         ImGui.SameLine()
 
-        if BetterUI.FitButtonN(3, "Load") then RenderPlaneFix:LoadConfig(); end
+        if BetterUI.FitButtonN(3, "Load") then mod:LoadConfig(); end
         ImGui.SameLine()
 
-        if BetterUI.FitButtonN(2, "Save") then RenderPlaneFix:SaveConfig(); end
+        if BetterUI.FitButtonN(2, "Save") then mod:SaveConfig(); end
         ImGui.SameLine()
 
-        if BetterUI.FitButtonN(1, "Reset") then RenderPlaneFix:ResetConfig(); end
+        if BetterUI.FitButtonN(1, "Reset") then mod:ResetConfig(); end
         ImGui.Separator()
     end
 end
