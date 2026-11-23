@@ -288,7 +288,8 @@ function RenderPlaneFix:RunPatchOnEntity(entity)
         return applied
     end
 
-    assert(false, "unhandled PatchType")
+    self.Log("Unhandled PatchType: ", tostring(self.patchType))
+    return false
 end
 
 function RenderPlaneFix:GetPatchableComponentsOfEntity(entity)
