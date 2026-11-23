@@ -283,8 +283,8 @@ function RenderPlaneFix:RunPatchOnEntity(entity)
         return self:RunCustomPatchOnEntity(entity)
     elseif self.patchType == PatchType.AutoAndCustom then
         local applied = false
-        applied = applied or self:RunAutoPatchOnEntity(entity)
-        applied = applied or self:RunCustomPatchOnEntity(entity)
+        if self:RunAutoPatchOnEntity(entity)   then applied = true; end
+        if self:RunCustomPatchOnEntity(entity) then applied = true; end
         return applied
     end
 
